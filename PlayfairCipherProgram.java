@@ -20,11 +20,9 @@ class PlayfairCipher
     key = key.toUpperCase();
     // Ciphertext will be stored here.
     StringBuilder ciphertext = new StringBuilder();
-    // For completing the matrix.
-    String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     // First arrange the key within the matrix, then the remaining letters.
     prepareMatrix(key);
-    prepareMatrix(alphabet);
+    prepareMatrix("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 
     // Displaying the matrix.
     System.out.println("\nThe matrix is:");
@@ -39,7 +37,7 @@ class PlayfairCipher
 
     /* Modify the plaintext such that the length of the plaintext is even
     (for making pairs) and there are no consequtive duplicate letters. */
-    StringBuilder paddedPlaintext = createPaddedPlaintext(plaintext);
+    StringBuilder paddedPlaintext = createPaddedText(plaintext);
     System.out.println("\nThe padded plaintext is:\n" + paddedPlaintext);
 
     // Analyse two letters in the plaintext at a time.
@@ -131,6 +129,91 @@ class PlayfairCipher
     return ciphertext.toString();
   }
 
+  // Decryption
+  public String decrypt(String ciphertext, String key)
+  {
+    // Convert the ciphertext and the key to uppercase.
+    ciphertext = ciphertext.toUpperCase();
+    key = key.toUpperCase();
+
+    // Destroy the original matrix and charset for new ones.
+    destroyMatrix();
+    // Create the new matrix.
+    prepareMatrix(key);
+    prepareMatrix("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
+    // Print the matrix.
+    System.out.println("\nThe matrix is:");
+    for(int i=0; i<5; ++i)
+    {
+      for(int j=0; j<5; ++j)
+      {
+        System.out.print(matrix[i][j] + " ");
+      }
+      System.out.println("");
+    }
+
+    StringBuilder plaintext = new StringBuilder();
+    StringBuilder paddedCipherText = createPaddedText(ciphertext);
+
+    // Same procedure as that in encryption.
+    for(int i=0; i<paddedCipherText.length()-1; i+=2)
+    {
+      char ch1 = paddedCipherText.charAt(i);
+      char ch2 = paddedCipherText.charAt(i+1);
+
+      int row1, col1, row2, col2;
+      row1 = col1 = row2 = col2 = -1;
+
+      for(int j=0; j<5; ++j)
+      {
+        for(int k=0; k<5; ++k)
+        {
+          if(ch1 == matrix[j][k])
+          {
+            row1 = j;
+            col1 = k;
+          }
+          else if(ch2 == matrix[j][k])
+          {
+            row2 = j;
+            col2 = k;
+          }
+
+          if(row1 != -1 && row2 != -1)
+          {
+            break;
+          }
+        }
+        if(row1 != -1 && row2 != -1)
+        {
+          break;
+        }
+      }
+
+      if(row1 == row2)
+      {
+        // Opposite of encryption.
+        char plain1 = (col1 == 0) ? matrix[row1][matrix[0].length-1] : matrix[row1][col1-1];
+        char plain2 = (col2 == 0) ? matrix[row2][matrix[0].length-1] : matrix[row1][col2-1];
+        plaintext.append(plain1).append(plain2);
+      }
+      else if(col1 == col2)
+      {
+        // Opposite of encryption.
+        char plain1 = (row1 == 0) ? matrix[matrix[0].length-1][col1] : matrix[row1-1][col1];
+        char plain2 = (row2 == 0) ? matrix[matrix[0].length-1][col2] : matrix[row2-1][col2];
+        plaintext.append(plain1).append(plain2);
+      }
+      else
+      {
+        plaintext.append(matrix[row1][col2]).append(matrix[row2][col1]);
+      }
+    }
+
+    return plaintext.toString();
+  }
+
   // Preparing the matrix from the key.
   private void prepareMatrix(String key)
   {
@@ -183,6 +266,7 @@ class PlayfairCipher
         if(ch != 'J')
         {
           matrix[i][j] = ch;
+          System.out.println(matrix[i][j]);
           charset.add(ch);
           ++keyCount;
           ++j;
@@ -199,6 +283,7 @@ class PlayfairCipher
         else if(ch == 'J' && !charset.contains('I'))
         {
           matrix[i][j] = 'I';
+          System.out.println(matrix[i][j]);
           charset.add('I');
           ++keyCount;
           ++j;
@@ -219,37 +304,43 @@ class PlayfairCipher
     }
   }
 
-  private StringBuilder createPaddedPlaintext(String plaintext)
+  private void destroyMatrix()
   {
-    StringBuilder paddedPlaintext = new StringBuilder();
-    // Iterate till the second-last character in the plaintext string.
-    for(int i=0; i<plaintext.length()-1; ++i)
+    matrix = new char[5][5];
+    charset = new HashSet<>();
+  }
+
+  private StringBuilder createPaddedText(String text)
+  {
+    StringBuilder paddedText = new StringBuilder();
+    // Iterate till the second-last character in the string.
+    for(int i=0; i<text.length()-1; ++i)
     {
       // Extract the current character as well as the one next to it.
-      char ch = plaintext.charAt(i), ch1 = plaintext.charAt(i+1);
-      // If the character is a letter, append it to the padded plaintext.
+      char ch = text.charAt(i), ch1 = text.charAt(i+1);
+      // If the character is a letter, append it to the padded text.
       if(Character.isLetter(ch))
       {
-        paddedPlaintext.append(Character.toUpperCase(ch));
+        paddedText.append(Character.toUpperCase(ch));
         // If the two characters are the same, add a 'Q' between them.
         if(ch == ch1)
         {
-          paddedPlaintext.append('Q');
+          paddedText.append('Q');
         }
       }
     }
-    // Append the last character in the plaintext to the padded plaintext.
-    char lastCharacter = plaintext.charAt(plaintext.length()-1);
-    paddedPlaintext.append(Character.toUpperCase(lastCharacter));
+    // Append the last character in the original text to the padded text.
+    char lastCharacter = text.charAt(text.length()-1);
+    paddedText.append(Character.toUpperCase(lastCharacter));
 
-    /* If the length of the padded plaintext is not even, add a 'Q' as padding
+    /* If the length of the padded text is not even, add a 'Q' as padding
     to make it so. */
-    if(paddedPlaintext.length()%2 != 0)
+    if(paddedText.length()%2 != 0)
     {
-      paddedPlaintext.append('Q');
+      paddedText.append('Q');
     }
 
-    return paddedPlaintext;
+    return paddedText;
   }
 }
 
@@ -264,6 +355,8 @@ public class PlayfairCipherProgram
     System.out.println("Enter a key:");
     String key = br.readLine();
     String ciphertext = cipher.encrypt(plaintext, key);
-    System.out.println("\nThe ciphertext is:\n" + ciphertext);
+    System.out.println("\nEncrypting...\nThe ciphertext is:\n" + ciphertext);
+    plaintext = cipher.decrypt(ciphertext, key);
+    System.out.println("\nDecrypting...\nThe plaintext is:\n" + plaintext);
   }
 }
