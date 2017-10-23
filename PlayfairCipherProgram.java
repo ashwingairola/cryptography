@@ -266,7 +266,6 @@ class PlayfairCipher
         if(ch != 'J')
         {
           matrix[i][j] = ch;
-          System.out.println(matrix[i][j]);
           charset.add(ch);
           ++keyCount;
           ++j;
@@ -283,7 +282,6 @@ class PlayfairCipher
         else if(ch == 'J' && !charset.contains('I'))
         {
           matrix[i][j] = 'I';
-          System.out.println(matrix[i][j]);
           charset.add('I');
           ++keyCount;
           ++j;
